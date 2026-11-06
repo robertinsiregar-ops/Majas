@@ -1,0 +1,6 @@
+{
+  "name": "BahasaKita 9: Legenda Literasi RPG",
+  "description": "Game RPG Edukatif Bahasa Indonesia Kelas 9 SMP dengan pertarungan 3D, quest teks diskusi, pidato persuasif, cerpen, dan kaidah EYD V.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BahasaKita 9: Legenda Literasi RPG - Bahasa Indonesia Kelas 9 SMP</title>
+  <meta name="description" content="Game RPG Edukatif Bahasa Indonesia Kelas 9 SMP. Petualangan 3D mengalahkan Raja Typo, menguasai teks diskusi, pidato persuasif, cerpen, dan kaidah EYD V!" />
+  <meta property="og:title" content="BahasaKita 9: Legenda Literasi RPG" />
+  <meta property="og:description" content="Game RPG Edukatif Bahasa Indonesia Kelas 9 SMP dengan pertarungan 3D real-time, quest teks diskusi, pidato persuasif, dan EYD V!" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js CDN for 3D Interactive Characters & RPG Arena -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            rpg: {
+              gold: '#f59e0b',
+              hp: '#ef4444',
+              mp: '#3b82f6',
+              exp: '#10b981',
+              dark: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .card-rpg {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-rpg:hover {
+      box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    }
+
+    /* Floating RPG Damage Numbers */
+    @keyframes float-damage {
+      0% { opacity: 0; transform: translateY(0) scale(0.8); }
+      20% { opacity: 1; transform: translateY(-15px) scale(1.2); }
+      80% { opacity: 1; transform: translateY(-30px) scale(1); }
+      100% { opacity: 0; transform: translateY(-45px) scale(0.9); }
+    }
+    .animate-damage {
+      animation: float-damage 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Screen Shake on Critical Hit */
+    @keyframes screen-shake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 4px); }
+      40% { transform: translate(6px, -4px); }
+      60% { transform: translate(-4px, 2px); }
+      80% { transform: translate(4px, -2px); }
+    }
+    .shake-screen {
+      animation: screen-shake 0.35s ease-in-out;
+    }
+
+    /* Custom 3D Canvas */
+    #rpgCanvas {
+      outline: none;
+      cursor: grab;
+      touch-action: none;
+    }
+    #rpgCanvas:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- ================= FLOATING DAMAGE TOAST CONTAINER ================= -->
+  <div id="floatingDamageContainer" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
+
+  <!-- ================= TOP RPG HUD & STATUS BAR ================= -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Hero Title -->
+      <a href="#" class="flex items-center gap-3 shrink-0 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-indigo-600 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+          <i data-lucide="sword" class="w-6 h-6 text-white"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-base sm:text-lg font-black tracking-tight text-white group-hover:text-amber-400 transition-colors flex items-center gap-2">
+            BahasaKita 9 <span class="text-xs bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">RPG</span>
+          </span>
+          <span class="text-[11px] font-medium text-slate-400">SMP Kelas 9 · Legenda Literasi</span>
+        </div>
+      </a>
+
+      <!-- Real-Time Hero Vitals Bar (HP, MP, EXP) -->
+      <div class="hidden md:flex items-center gap-5 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-2xl shadow-inner">
+        <!-- Hero Level -->
+        <div class="flex items-center gap-1.5">
+          <div class="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-black font-mono text-xs flex items-center justify-center">
+            Lv.<span id="hudHeroLevel">1</span>
+          </div>
+          <span id="hudHeroClassName" class="text-xs font-bold text-slate-300">Ksatria Cendekia</span>
+        </div>
+
+        <div class="w-px h-6 bg-slate-800"></div>
+
+        <!-- HP Bar -->
+        <div class="space-y-1 w-28">
+          <div class="flex justify-between text-[10px] font-bold">
+            <span class="text-rose-400 flex items-center gap-0.5"><i data-lucide="heart" class="w-3 h-3 fill-rose-500"></i> HP</span>
+            <span class="font-mono text-slate-300"><span id="hudHpText">100</span>/100</span>
+          </div>
+          <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-rose-950">
+            <div id="hudHpBar" class="h-full bg-gradient-to-r from-rose-600 to-rose-400 rounded-full transition-all duration-300" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- MP Bar (Mana Literasi) -->
+        <div class="space-y-1 w-24">
+          <div class="flex justify-between text-[10px] font-bold">
+            <span class="text-sky-400 flex items-center gap-0.5"><i data-lucide="sparkles" class="w-3 h-3 text-sky-400"></i> MP</span>
+            <span class="font-mono text-slate-300"><span id="hudMpText">50</span>/50</span>
+          </div>
+          <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-sky-950">
+            <div id="hudMpBar" class="h-full bg-gradient-to-r from-sky-600 to-sky-400 rounded-full transition-all duration-300" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Gold Coins -->
+        <div class="flex items-center gap-1.5 text-xs font-bold text-amber-400 font-mono">
+          <i data-lucide="coins" class="w-4 h-4 text-amber-400"></i>
+          <span id="hudGoldText">120</span>
+        </div>
+      </div>
+
+      <!-- Quick Nav & Settings -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Audio Switcher -->
+        <button id="soundToggleBtn" onclick="toggleAudio()" title="Sound On/Off" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+          <i id="soundIcon" data-lucide="volume-2" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Player Profile Button -->
+        <button onclick="openProfileModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition-all">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="navPlayerName" class="max-w-[70px] sm:max-w-[100px] truncate">Siswa 9</span>
+        </button>
+
+        <!-- Quest Inventory / Rapor Modal -->
+        <button onclick="openResultModal()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-xl shadow-md transition-all whitespace-nowrap">
+          <i data-lucide="backpack" class="w-4 h-4"></i>
+          <span>Tas & Rapor</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN RPG VIEWPORT ================= -->
+  <main class="flex-1 pb-20">
+
+    <!-- HERO & 3D BATTLE ARENA SECTION -->
+    <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pt-6 pb-12 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- RPG Story Prologue Banner -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-amber-950/60 border border-slate-800 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+              <i data-lucide="scroll" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[11px] uppercase font-bold text-amber-400 tracking-wider">Misi Utama Kelas 9 SMP</div>
+              <h2 class="text-sm sm:text-base font-extrabold text-white">Taklukkan Raja Typo & Bebaskan Kerajaan Literasi!</h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="scrollToSection('battle-arena')" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+              <i data-lucide="swords" class="w-3.5 h-3.5"></i>
+              <span>Ke Arena Battle 3D</span>
+            </button>
+            <button onclick="scrollToSection('quest-map')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors flex items-center gap-1.5">
+              <i data-lucide="map" class="w-3.5 h-3.5"></i>
+              <span>Peta Quest</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3D RPG BATTLE STAGE (Hero 3D vs Monster Boss 3D) -->
+        <div id="battle-arena" class="rounded-3xl p-5 sm:p-7 bg-slate-950 border border-slate-800 relative overflow-hidden shadow-2xl">
+          
+          <!-- Battle Top Info Bar -->
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-4">
+            
+            <!-- Hero Side Info -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-sky-950 border border-sky-600/50 flex items-center justify-center text-xl">
+                🧑‍🎓
+              </div>
+              <div>
+                <div class="text-xs font-extrabold text-white flex items-center gap-1.5">
+                  <span id="arenaHeroName">Siswa 9 (Ksatria Cendekia)</span>
+                  <span class="text-[10px] bg-sky-950 text-sky-400 font-mono px-1.5 py-0.2 rounded border border-sky-800">PLAYER</span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono">
+                  HP: <span id="battleHeroHpText" class="text-rose-400 font-bold">100</span> / 100
+                </div>
+              </div>
+            </div>
+
+            <!-- VS Badge -->
+            <div class="w-9 h-9 rounded-full bg-slate-900 border border-slate-700 text-amber-400 font-black text-xs flex items-center justify-center shadow-lg">
+              VS
+            </div>
+
+            <!-- Boss Side Info -->
+            <div class="flex items-center gap-3 text-right">
+              <div>
+                <div class="text-xs font-extrabold text-rose-400 flex items-center justify-end gap-1.5">
+                  <span class="text-[10px] bg-rose-950 text-rose-300 font-mono px-1.5 py-0.2 rounded border border-rose-800">BOSS LV.9</span>
+                  <span id="arenaBossName">Raja Typo & Golem Kata Baku</span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono">
+                  Boss HP: <span id="battleBossHpText" class="text-rose-400 font-bold">300</span> / 300
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-rose-950 border border-rose-600/50 flex items-center justify-center text-xl">
+                👹
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 3D WebGL Canvas Viewport -->
+          <div id="canvasContainer" class="relative w-full h-[320px] sm:h-[380px] rounded-2xl bg-gradient-to-b from-slate-900 via-indigo-950/40 to-slate-950 border border-slate-800/80 overflow-hidden flex items-center justify-center">
+            
+            <canvas id="rpgCanvas" class="w-full h-full block"></canvas>
+
+            <!-- Boss HP Overhead Bar -->
+            <div class="absolute top-4 right-6 w-48 sm:w-60 bg-slate-950/80 backdrop-blur-xs p-2.5 rounded-xl border border-rose-900/60 shadow-lg pointer-events-none">
+              <div class="flex justify-between text-[11px] font-bold mb-1">
+                <span class="text-rose-400">Raja Typo & Golem</span>
+                <span id="overheadBossHp" class="font-mono text-slate-300">300/300</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-rose-950">
+                <div id="overheadBossHpBar" class="h-full bg-gradient-to-r from-rose-600 via-orange-500 to-amber-400 rounded-full transition-all duration-300" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Battle Dialogue Notification Box -->
+            <div id="battleDialogueBox" class="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 p-3.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-800 shadow-xl text-xs text-slate-200 flex items-center justify-between gap-4 pointer-events-none transition-all">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="swords" class="w-4 h-4"></i>
+                </div>
+                <div id="battleDialogueText" class="leading-relaxed font-medium">
+                  Raja Typo menghadang jalanmu! Pilih menu perintah di bawah untuk melancarkan serangan berbasis materi Bahasa Indonesia!
+                </div>
+              </div>
+              <span id="battleActionIndicator" class="font-mono text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-900 shrink-0">Giliran Anda</span>
+            </div>
+
+          </div>
+
+          <!-- RPG Command Deck (Turn-Based Battle Controls) -->
+          <div class="mt-4 pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button onclick="triggerBattleAction('attack')" class="p-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-950 transition-all flex items-center justify-center gap-2 group">
+              <i data-lucide="sword" class="w-4 h-4 group-hover:rotate-45 transition-transform"></i>
+              <span>1. SERANG (Jawab Soal)</span>
+            </button>
+            <button onclick="triggerBattleAction('defend')" class="p-3 rounded-2xl bg-sky-700 hover:bg-sky-600 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-sky-950 transition-all flex items-center justify-center gap-2 group">
+              <i data-lucide="shield" class="w-4 h-4"></i>
+              <span>2. TANGKIS (Argumen Pro/Kontra)</span>
+            </button>
+            <button onclick="triggerBattleAction('spell')" class="p-3 rounded-2xl bg-purple-700 hover:bg-purple-600 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-purple-950 transition-all flex items-center justify-center gap-2 group">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>3. MANTRA (Tebak Majas)</span>
+            </button>
+            <button onclick="triggerBattleAction('item')" class="p-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold text-xs sm:text-sm shadow-md shadow-amber-950 transition-all flex items-center justify-center gap-2 group">
+              <i data-lucide="flask-conical" class="w-4 h-4 text-slate-950"></i>
+              <span>4. ITEM POTION (+HP)</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= SECTION: RPG QUEST MAP (4 REALMS LITERASI) ================= -->
+    <section id="quest-map" class="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <div class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+          Peta Petualangan Literasi
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          Jelajahi 4 Realm Ujian Kurikulum Kelas 9
+        </h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">
+          Selesaikan quest di setiap realm untuk mengumpulkan EXP, Gold, dan memperkuat senjata 3D karaktermu!
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Realm 1: Kuil Diskusi -->
+        <div class="rounded-3xl p-5 bg-slate-900 border border-slate-800 flex flex-col justify-between hover:border-teal-500/60 transition-all group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-teal-950 text-teal-400 border border-teal-800 flex items-center justify-center font-black text-lg">
+              I
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-teal-400 uppercase tracking-widest">Dungeon Realm 1</span>
+              <h3 class="font-extrabold text-white text-base group-hover:text-teal-300 transition-colors">Kuil Teks Diskusi</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                Pilah argumen pro dan kontra terkait isu ponsel pintar di sekolah untuk membuka gerbang batu purba.
+              </p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 mt-4 flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-teal-400">+120 EXP</span>
+            <a href="#game-diskusi" class="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition-colors flex items-center gap-1">
+              <span>Mulai Quest</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Realm 2: Menara Pidato -->
+        <div class="rounded-3xl p-5 bg-slate-900 border border-slate-800 flex flex-col justify-between hover:border-indigo-500/60 transition-all group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-950 text-indigo-400 border border-indigo-800 flex items-center justify-center font-black text-lg">
+              II
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Dungeon Realm 2</span>
+              <h3 class="font-extrabold text-white text-base group-hover:text-indigo-300 transition-colors">Menara Pidato Persuasif</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                Rekonstruksi 5 fragmen naskah pidato lingkungan hidup dan buka mantra orasi suara narator!
+              </p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 mt-4 flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-indigo-400">+100 EXP</span>
+            <a href="#game-pidato" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center gap-1">
+              <span>Mulai Quest</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Realm 3: Hutan Majas -->
+        <div class="rounded-3xl p-5 bg-slate-900 border border-slate-800 flex flex-col justify-between hover:border-purple-500/60 transition-all group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-purple-950 text-purple-400 border border-purple-800 flex items-center justify-center font-black text-lg">
+              III
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Dungeon Realm 3</span>
+              <h3 class="font-extrabold text-white text-base group-hover:text-purple-300 transition-colors">Hutan Belantara Majas</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                Tangkis siluman sastra dengan menebak secara tepat majas personifikasi, metafora, hiperbola, dan simile.
+              </p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 mt-4 flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-purple-400">+100 EXP</span>
+            <a href="#game-majas" class="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors flex items-center gap-1">
+              <span>Mulai Quest</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Realm 4: Kuil EYD V & Konjungsi -->
+        <div class="rounded-3xl p-5 bg-slate-900 border border-slate-800 flex flex-col justify-between hover:border-amber-500/60 transition-all group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center font-black text-lg">
+              IV
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Dungeon Realm 4</span>
+              <h3 class="font-extrabold text-white text-base group-hover:text-amber-300 transition-colors">Kuil Rahasia EYD V</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                Tantangan kuis kilat 15 detik menembus labirin kata baku KBBI dan tanda baca. Ada bantuan 50:50!
+              </p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-800/80 mt-4 flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-amber-400">+125 EXP</span>
+            <a href="#game-kuis" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center gap-1">
+              <span>Mulai Quest</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= SECTION: QUEST 1 - SORTIR DISKUSI ================= -->
+    <section id="game-diskusi" class="py-14 bg-slate-950/60 border-y border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-950 text-teal-400 text-xs font-bold mb-2 border border-teal-800">
+              <i data-lucide="scale" class="w-3.5 h-3.5"></i>
+              <span>Quest Realm I: Gerbang Logika Diskusi</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Sortir Argumen: Perisai Pro vs Pedang Kontra
+            </h2>
+            <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+              Isu: <strong>"Penerapan Penggunaan Ponsel Pintar (HP) Sebagai Media Pembelajaran di Sekolah"</strong>.
+            </p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <div class="px-4 py-2 bg-slate-900 rounded-xl border border-slate-800 text-xs font-semibold text-slate-400">
+              Kartu Segel: <span id="diskusiCardCount" class="font-mono font-bold text-teal-400">1 / 6</span>
+            </div>
+            <button onclick="resetGameDiskusi()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Acak Ulang</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          
+          <!-- Drop Zone: PRO (Left) -->
+          <div id="dropZonePro" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'pro')" class="lg:col-span-4 rounded-3xl p-5 border-2 border-dashed border-teal-500/50 bg-teal-950/20 flex flex-col justify-between transition-all min-h-[300px]">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-teal-400">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-teal-400"></i>
+                  Perisai Pro (Mendukung)
+                </span>
+                <span id="badgeCountPro" class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-teal-900 text-teal-200">0 Kartu</span>
+              </div>
+              <p class="text-[11px] text-teal-300/80 mb-3">Tarik ke sini atau klik tombol [Pilih Pro] jika mengandung manfaat, fakta positif, atau solusi belajar.</p>
+              
+              <div id="proContainer" class="space-y-2"></div>
+            </div>
+
+            <button onclick="handleManualSort('pro')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Pilih Ini: Argumen Pro (←)</span>
+            </button>
+          </div>
+
+          <!-- Active Card Deck (Center) -->
+          <div class="lg:col-span-4 flex flex-col items-center justify-center space-y-4">
+            <div id="activeCardContainer" class="w-full"></div>
+
+            <div id="diskusiFeedbackBox" class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs hidden transition-all">
+              <div class="flex items-start gap-2.5">
+                <div id="diskusiFeedbackIcon" class="mt-0.5"></div>
+                <div>
+                  <div id="diskusiFeedbackTitle" class="font-bold"></div>
+                  <div id="diskusiFeedbackDesc" class="text-slate-400 mt-0.5 leading-relaxed"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drop Zone: KONTRA (Right) -->
+          <div id="dropZoneKontra" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'kontra')" class="lg:col-span-4 rounded-3xl p-5 border-2 border-dashed border-rose-500/50 bg-rose-950/20 flex flex-col justify-between transition-all min-h-[300px]">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-400">
+                  <i data-lucide="swords" class="w-4 h-4 text-rose-400"></i>
+                  Pedang Kontra (Menentang)
+                </span>
+                <span id="badgeCountKontra" class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-rose-900 text-rose-200">0 Kartu</span>
+              </div>
+              <p class="text-[11px] text-rose-300/80 mb-3">Tarik ke sini atau klik tombol [Pilih Kontra] jika menyoroti risiko, distraksi, atau kerugian.</p>
+              
+              <div id="kontraContainer" class="space-y-2"></div>
+            </div>
+
+            <button onclick="handleManualSort('kontra')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+              <span>Pilih Ini: Argumen Kontra (→)</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= SECTION: QUEST 2 - DETEKTIF STRUKTUR PIDATO ================= -->
+    <section id="game-pidato" class="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950 text-indigo-400 text-xs font-bold mb-2 border border-indigo-800">
+            <i data-lucide="scroll" class="w-3.5 h-3.5"></i>
+            <span>Quest Realm II: Menara Suci Pidato</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Rekonstruksi Mantra Naskah Pidato Persuasif
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+            Naskah pidato bertema <em>"Aksi Nyata Remaja SMP Menolak Sampah Plastik"</em> teracak. Tata kembali dengan tombol <strong>[▲ Naik]</strong> atau <strong>[▼ Turun]</strong>!
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button onclick="resetGamePidato()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Acak Ulang</span>
+          </button>
+          <button onclick="checkPidatoOrder()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-950 transition-all flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Uji Susunan Mantra (+100 EXP)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-indigo-950/40 border border-indigo-800/60 rounded-2xl p-3.5 mb-5 text-xs text-indigo-200 flex flex-wrap items-center gap-2 sm:gap-4">
+        <span class="font-bold flex items-center gap-1.5 text-amber-400">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+          Rangkaian Segel:
+        </span>
+        <span class="text-slate-300">1. Salam & Sapaan &rarr;</span>
+        <span class="text-slate-300">2. Pengenalan Isu &rarr;</span>
+        <span class="text-slate-300">3. Rangkaian Argumen &rarr;</span>
+        <span class="text-slate-300">4. Pernyataan Ajakan &rarr;</span>
+        <span class="text-slate-300">5. Penutup</span>
+      </div>
+
+      <div id="pidatoListContainer" class="space-y-3"></div>
+      <div id="pidatoResultBanner" class="mt-6 hidden p-5 rounded-2xl border transition-all"></div>
+
+    </section>
+
+    <!-- ================= SECTION: QUEST 3 - ARENA MAJAS CEPAT ================= -->
+    <section id="game-majas" class="py-14 bg-slate-950/60 border-y border-slate-800">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950 text-purple-400 text-xs font-bold mb-2 border border-purple-800">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Quest Realm III: Hutan Belantara Majas</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Arena Duel Cepat Gaya Bahasa Sastra
+          </h2>
+          <p class="text-slate-400 text-xs sm:text-sm mt-1">
+            Analisis kalimat sastra dan pilih jenis majasnya untuk mengaktifkan kombo serangan sihir!
+          </p>
+        </div>
+
+        <div class="rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 relative overflow-hidden shadow-xl">
+          
+          <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-4 pb-3 border-b border-slate-800">
+            <span class="text-purple-400 flex items-center gap-1.5">
+              <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
+              Kartu Segel <span id="majasCardIndex" class="font-mono">1</span> dari 6
+            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400">Skor Majas:</span>
+              <span id="majasScoreDisplay" class="font-mono font-bold text-purple-400 text-sm">0 Benar</span>
+            </div>
+          </div>
+
+          <div id="majasCardStage" class="bg-gradient-to-br from-purple-950/50 to-indigo-950/40 p-6 sm:p-8 rounded-2xl border border-purple-800/60 text-center mb-6 relative">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-purple-300 bg-purple-900/60 px-2.5 py-1 rounded-full border border-purple-700 shadow-xs mb-3 inline-block">
+              Analisis Kalimat Sastra:
+            </span>
+            <p id="majasQuoteText" class="text-base sm:text-xl font-bold text-white italic leading-relaxed max-w-xl mx-auto my-3">
+              "Bulan tersenyum ramah menyapa malam yang sunyi sepi."
+            </p>
+            <p class="text-xs text-slate-400">Manakah jenis majas yang paling tepat?</p>
+          </div>
+
+          <div id="majasButtonGroup" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <button onclick="handleMajasAnswer('personifikasi')" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-purple-900/50 hover:border-purple-500 text-white font-bold text-xs sm:text-sm transition-all flex flex-col items-center gap-1">
+              <span>Personifikasi</span>
+              <span class="text-[10px] text-slate-400 font-normal">Benda berbuat spt manusia</span>
+            </button>
+            <button onclick="handleMajasAnswer('metafora')" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-purple-900/50 hover:border-purple-500 text-white font-bold text-xs sm:text-sm transition-all flex flex-col items-center gap-1">
+              <span>Metafora</span>
+              <span class="text-[10px] text-slate-400 font-normal">Kiasan analogi langsung</span>
+            </button>
+            <button onclick="handleMajasAnswer('hiperbola')" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-purple-900/50 hover:border-purple-500 text-white font-bold text-xs sm:text-sm transition-all flex flex-col items-center gap-1">
+              <span>Hiperbola</span>
+              <span class="text-[10px] text-slate-400 font-normal">Pernyataan berlebihan</span>
+            </button>
+            <button onclick="handleMajasAnswer('simile')" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-purple-900/50 hover:border-purple-500 text-white font-bold text-xs sm:text-sm transition-all flex flex-col items-center gap-1">
+              <span>Simile / Asosiasi</span>
+              <span class="text-[10px] text-slate-400 font-normal">Perumpamaan (bagai/laksana)</span>
+            </button>
+          </div>
+
+          <div id="majasFeedbackBox" class="hidden p-4 rounded-2xl text-xs mb-4"></div>
+
+          <div class="flex justify-end">
+            <button id="majasNextBtn" onclick="nextMajasQuestion()" class="hidden px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+              <span>Tantangan Majas Berikutnya</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= SECTION: QUEST 4 - KUIS KILAT EYD V ================= -->
+    <section id="game-kuis" class="py-14 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950 text-amber-400 text-xs font-bold mb-2 border border-amber-800">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Quest Realm IV: Kuil Rahasia EYD V</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Kuis Kilat Kebahasaan 15 Detik
+        </h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">
+          Pecahkan teka-teki kata baku dan konjungsi untuk menembus pertahanan Raja Typo!
+        </p>
+      </div>
+
+      <div class="rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 relative overflow-hidden shadow-xl">
+        
+        <div id="quizPlayArea">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2">
+              <span id="quizQuestionNumber" class="text-amber-400 font-bold text-xs">Soal 1 dari 5</span>
+              <span class="text-slate-700">|</span>
+              <button id="powerupFifty" onclick="useFiftyFifty()" class="px-2.5 py-1 rounded-lg bg-sky-950 hover:bg-sky-900 text-sky-400 border border-sky-800 text-[11px] font-bold transition-all flex items-center gap-1">
+                <i data-lucide="scissors" class="w-3 h-3"></i>
+                <span>Mantra 50:50 (1x)</span>
+              </button>
+              <button id="powerupFreeze" onclick="useFreezeTime()" class="px-2.5 py-1 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-indigo-400 border border-indigo-800 text-[11px] font-bold transition-all flex items-center gap-1">
+                <i data-lucide="snowflake" class="w-3 h-3"></i>
+                <span>+10s Freeze (1x)</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5 text-slate-300 self-end sm:self-center">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+              <span id="quizTimerText" class="font-mono font-bold text-sm text-amber-300">15s</span>
+            </div>
+          </div>
+
+          <!-- Timer Bar -->
+          <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden mb-5 border border-slate-800">
+            <div id="quizTimerBar" class="h-full bg-amber-500 rounded-full transition-all duration-200" style="width: 100%;"></div>
+          </div>
+
+          <div class="mb-5">
+            <span id="quizCategoryLabel" class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-300 mb-2"></span>
+            <h3 id="quizQuestionText" class="text-base sm:text-lg font-bold text-white leading-snug"></h3>
+          </div>
+
+          <div id="quizOptionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5"></div>
+          <div id="quizFeedbackBox" class="hidden p-4 rounded-2xl mb-5 text-xs transition-all"></div>
+
+          <div class="flex justify-end">
+            <button id="quizNextBtn" onclick="nextQuizQuestion()" class="hidden px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-2">
+              <span>Soal Berikutnya</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="quizFinishedArea" class="hidden text-center py-8 space-y-4">
+          <div class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 mx-auto flex items-center justify-center">
+            <i data-lucide="trophy" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-2xl font-black text-white">Kuis EYD Selesai!</h3>
+          <p class="text-slate-400 text-sm max-w-md mx-auto">
+            Kamu berhasil menjawab <span id="quizFinalScore" class="font-bold text-white font-mono">0 / 5</span> soal dengan benar.
+          </p>
+          <div class="flex items-center justify-center gap-3 pt-3">
+            <button onclick="restartQuiz()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-colors flex items-center gap-1.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Coba Kuis Lagi</span>
+            </button>
+            <button onclick="scrollToSection('battle-arena')" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+              <i data-lucide="swords" class="w-4 h-4"></i>
+              <span>Kembali ke Arena Battle 3D</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= SECTION: PERPUSTAKAAN MATERI KUNO ================= -->
+    <section id="materi" class="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-800">
+      <div class="text-center max-w-2xl mx-auto mb-8">
+        <div class="inline-flex items-center gap-1.5 text-xs font-bold text-sky-400 uppercase tracking-wider mb-2">
+          <i data-lucide="book" class="w-3.5 h-3.5"></i>
+          Perpustakaan Mantra Literasi
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          Kitab Materi Pokok Bahasa Indonesia Kelas 9
+        </h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">
+          Buka gulungan kitab di bawah untuk menyerap pengetahuan dasar sebelum berhadapan dengan monster ujian!
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-2 p-1.5 bg-slate-900 rounded-2xl max-w-3xl mx-auto mb-8 border border-slate-800">
+        <button onclick="switchMateriTab('cerpen')" id="tabBtn-cerpen" class="tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-sky-600 text-white shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>1. Teks Cerpen</span>
+        </button>
+        <button onclick="switchMateriTab('diskusi')" id="tabBtn-diskusi" class="tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span>2. Teks Diskusi</span>
+        </button>
+        <button onclick="switchMateriTab('pidato')" id="tabBtn-pidato" class="tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+          <i data-lucide="mic" class="w-4 h-4"></i>
+          <span>3. Pidato Persuasif</span>
+        </button>
+        <button onclick="switchMateriTab('kebahasaan')" id="tabBtn-kebahasaan" class="tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+          <i data-lucide="spell-check" class="w-4 h-4"></i>
+          <span>4. Kaidah EYD</span>
+        </button>
+      </div>
+
+      <!-- Tab Content: Cerpen -->
+      <div id="materiContent-cerpen" class="materi-pane rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-sky-950 text-sky-400 border border-sky-800 flex items-center justify-center shrink-0">
+              <i data-lucide="book" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white">Teks Cerpen (Cerita Pendek)</h3>
+              <p class="text-xs text-slate-400">Unsur Pembangun Intrinsik & Ciri Karya Sastra Naratif</p>
+            </div>
+          </div>
+          <button onclick="markMateriRead('cerpen')" id="readBtn-cerpen" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-sky-600/60 bg-sky-950 text-sky-300 hover:bg-sky-600 hover:text-white flex items-center gap-2 self-start sm:self-center">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="readText-cerpen">Serap Mantra (+10 EXP)</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="font-bold text-sky-400 text-sm">1. Tema & Amanat</div>
+            <p class="text-slate-300 leading-relaxed">
+              <strong>Tema:</strong> Pokok pikiran cerita (persahabatan, kejujuran).<br>
+              <strong>Amanat:</strong> Pesan moral yang ingin disampaikan pengarang.
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="font-bold text-indigo-400 text-sm">2. Tokoh & Penokohan</div>
+            <p class="text-slate-300 leading-relaxed">
+              <strong>Peran:</strong> Protagonis (baik), Antagonis (penentang), Tritagonis.<br>
+              <strong>Teknik:</strong> Analitik (langsung) & Dramatik (lewat dialog/aksi).
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="font-bold text-teal-400 text-sm">3. Alur (Plot) Cerita</div>
+            <p class="text-slate-300 leading-relaxed">
+              Orientasi (Pengenalan) &rarr; Komplikasi (Masalah) &rarr; Klimaks (Puncak) &rarr; Resolusi (Penyelesaian).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Diskusi -->
+      <div id="materiContent-diskusi" class="materi-pane hidden rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-teal-950 text-teal-400 border border-teal-800 flex items-center justify-center shrink-0">
+              <i data-lucide="message-square" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white">Teks Diskusi</h3>
+              <p class="text-xs text-slate-400">Mengkaji Isu Kontroversial dari Dua Sudut Pandang Objektif</p>
+            </div>
+          </div>
+          <button onclick="markMateriRead('diskusi')" id="readBtn-diskusi" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-teal-600/60 bg-teal-950 text-teal-300 hover:bg-teal-600 hover:text-white flex items-center gap-2 self-start sm:self-center">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="readText-diskusi">Serap Mantra (+10 EXP)</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+            <h4 class="font-bold text-teal-400">1. Isu (Masalah)</h4>
+            <p class="text-slate-300">Pengenalan topik kontroversial yang menarik perhatian publik.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800 space-y-1.5">
+            <h4 class="font-bold text-emerald-400">2. Argumen Pro</h4>
+            <p class="text-slate-300">Alasan dan data yang mendukung serta menunjukkan manfaat isu.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-rose-950/40 border border-rose-800 space-y-1.5">
+            <h4 class="font-bold text-rose-400">3. Argumen Kontra</h4>
+            <p class="text-slate-300">Ulasan risiko, kerugian, atau kekhawatiran yang menolak isu.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+            <h4 class="font-bold text-indigo-400">4. Simpulan</h4>
+            <p class="text-slate-300">Jalan tengah yang bijak dan rekomendasi tanpa memihak ekstrem.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Pidato -->
+      <div id="materiContent-pidato" class="materi-pane hidden rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-950 text-indigo-400 border border-indigo-800 flex items-center justify-center shrink-0">
+              <i data-lucide="mic" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white">Teks Pidato Persuasif</h3>
+              <p class="text-xs text-slate-400">Seni Mengajak & Meyakinkan Khalayak Lewat Argumen Terstruktur</p>
+            </div>
+          </div>
+          <button onclick="markMateriRead('pidato')" id="readBtn-pidato" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-indigo-600/60 bg-indigo-950 text-indigo-300 hover:bg-indigo-600 hover:text-white flex items-center gap-2 self-start sm:self-center">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="readText-pidato">Serap Mantra (+10 EXP)</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+            <div class="font-bold text-indigo-400">1. Salam & Sapaan</div>
+            <p class="text-slate-400">Salam hormat dan puji syukur.</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+            <div class="font-bold text-indigo-400">2. Pengenalan Isu</div>
+            <p class="text-slate-400">Pengantar topik penting bersama.</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+            <div class="font-bold text-indigo-400">3. Rangkaian Argumen</div>
+            <p class="text-slate-400">Fakta bukti pendukung logis.</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+            <div class="font-bold text-indigo-400">4. Ajakan Bertindak</div>
+            <p class="text-slate-400">Inti persuasi (marilah, ayo).</p>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+            <div class="font-bold text-indigo-400">5. Penutup Pidato</div>
+            <p class="text-slate-400">Kesimpulan, maaf, salam penutup.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Kebahasaan -->
+      <div id="materiContent-kebahasaan" class="materi-pane hidden rounded-3xl p-6 sm:p-8 bg-slate-900 border border-slate-800 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center shrink-0">
+              <i data-lucide="spell-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white">Kaidah Kebahasaan & EYD V</h3>
+              <p class="text-xs text-slate-400">Ketepatan Ejaan, Kosakata Baku, dan Konjungsi</p>
+            </div>
+          </div>
+          <button onclick="markMateriRead('kebahasaan')" id="readBtn-kebahasaan" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-amber-600/60 bg-amber-950 text-amber-300 hover:bg-amber-500 hover:text-slate-950 flex items-center gap-2 self-start sm:self-center">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="readText-kebahasaan">Serap Mantra (+10 EXP)</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          <div class="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950">
+            <div class="bg-slate-800 px-4 py-2.5 font-bold text-white flex justify-between">
+              <span>Kata Baku KBBI V</span>
+              <span class="text-emerald-400">Baku vs Tak Baku</span>
+            </div>
+            <div class="p-3 divide-y divide-slate-800 text-slate-300">
+              <div class="py-1.5 flex justify-between"><span class="text-emerald-400 font-bold">Praktik</span> <span class="text-rose-400 line-through">Praktek</span></div>
+              <div class="py-1.5 flex justify-between"><span class="text-emerald-400 font-bold">Izin</span> <span class="text-rose-400 line-through">Ijin</span></div>
+              <div class="py-1.5 flex justify-between"><span class="text-emerald-400 font-bold">Aktivitas</span> <span class="text-rose-400 line-through">Aktifitas</span></div>
+              <div class="py-1.5 flex justify-between"><span class="text-emerald-400 font-bold">Analisis</span> <span class="text-rose-400 line-through">Analisa</span></div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+              <span class="font-bold text-amber-400 block mb-1">Konjungsi Antarkalimat:</span>
+              <p class="text-slate-300">"Oleh karena itu", "Meskipun demikian" selalu berada di awal kalimat baru dan <strong>wajib diikuti tanda koma (,)</strong>.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+              <span class="font-bold text-amber-400 block mb-1">Kapitalisasi Judul:</span>
+              <p class="text-slate-300">Setiap kata diawali huruf kapital kecuali kata tugas (di, ke, dari, dan, yang) di tengah judul.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: TAS & RAPOR RPG ================= -->
+  <div id="resultModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="rounded-3xl bg-slate-900 border border-slate-800 max-w-xl w-full p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto relative animate-in fade-in zoom-in-95 duration-200 shadow-2xl">
+      
+      <button onclick="closeResultModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mx-auto shadow-lg">
+          <i data-lucide="crown" class="w-8 h-8"></i>
+        </div>
+        <span class="text-[11px] uppercase tracking-widest font-extrabold text-amber-400 block">Rapor Petualang Literasi</span>
+        <h3 id="modalBadgeTitle" class="text-2xl font-black text-white">
+          Ksatria Bahasa Indonesia
+        </h3>
+        <p id="modalBadgeDesc" class="text-xs text-slate-400 max-w-sm mx-auto">
+          Dedikasi dan ketajaman analisismu dalam menguasai kompetensi Bahasa Indonesia kelas 9 SMP!
+        </p>
+      </div>
+
+      <!-- Stats Box -->
+      <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-around text-center">
+        <div>
+          <span class="text-[11px] font-semibold text-slate-400 uppercase">Total EXP</span>
+          <div class="text-3xl font-black text-amber-400 font-mono mt-0.5">
+            <span id="modalTotalXp">0</span> <span class="text-xs font-sans text-slate-500">EXP</span>
+          </div>
+        </div>
+        <div class="w-px h-10 bg-slate-800"></div>
+        <div>
+          <span class="text-[11px] font-semibold text-slate-400 uppercase">Gelar Akademik</span>
+          <div id="modalRankText" class="text-sm sm:text-base font-bold text-sky-400 mt-1">
+            Ksatria Cendekia Lv.1
+          </div>
+        </div>
+      </div>
+
+      <!-- Trophies Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-3 text-xs font-bold text-slate-300">
+          <span class="flex items-center gap-1.5 text-amber-400">
+            <i data-lucide="award" class="w-4 h-4"></i>
+            Koleksi Lencana Trofi
+          </span>
+          <span id="trophyUnlockCount" class="font-mono text-amber-400">0 / 6 Terbuka</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs" id="trophyGrid"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+        <button onclick="shareAchievement()" class="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          <span id="shareBtnText">Salin Rapor Petualangan</span>
+        </button>
+        <button onclick="resetAllProgress()" class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-rose-950 hover:text-rose-400 text-slate-400 font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Reset RPG</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDIT PROFIL HERO ================= -->
+  <div id="profileModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="rounded-3xl bg-slate-900 border border-slate-800 max-w-sm w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-black text-white text-base">Profil Ksatria 3D</h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Hero Class / 3D Model Picker -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-300 block">Pilih Hero Class & Model 3D:</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="select3DCharacter(0)" id="modalCharBtn-0" class="p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-left transition-all">
+            <div class="text-base">🧑‍🎓</div>
+            <div class="font-bold text-xs text-white">Ksatria Cendekia</div>
+            <div class="text-[10px] text-slate-400">Pedang Pena & Buku</div>
+          </button>
+          <button onclick="select3DCharacter(1)" id="modalCharBtn-1" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-left transition-all">
+            <div class="text-base">🕵️</div>
+            <div class="font-bold text-xs text-white">Detektif Sastra</div>
+            <div class="text-[10px] text-slate-400">Kaca Pembesar Logika</div>
+          </button>
+          <button onclick="select3DCharacter(2)" id="modalCharBtn-2" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-left transition-all">
+            <div class="text-base">🤖</div>
+            <div class="font-bold text-xs text-white">Pujangga Cyber</div>
+            <div class="text-[10px] text-slate-400">Laser Visor Futuristik</div>
+          </button>
+          <button onclick="select3DCharacter(3)" id="modalCharBtn-3" class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-left transition-all">
+            <div class="text-base">🎤</div>
+            <div class="font-bold text-xs text-white">Sang Orator</div>
+            <div class="text-[10px] text-slate-400">Mikrofon Emas Retorika</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Name Input -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-300 block">Nama Panggilan Petualang:</label>
+        <input type="text" id="playerNameInput" maxlength="18" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Contoh: Zahra 9A">
+      </div>
+
+      <button onclick="saveProfile()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-colors">
+        Simpan Profil RPG
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-8 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black">
+          RPG
+        </div>
+        <span class="font-bold text-slate-300">BahasaKita 9: Legenda Literasi</span>
+        <span>· Game RPG Pembelajaran Bahasa Indonesia SMP</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-500">
+        <span>Three.js 3D Battle Engine</span>
+        <span>·</span>
+        <span>Kurikulum Merdeka</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= THREE.JS 3D RPG BATTLE ENGINE ================= -->
+  <script>
+    /**
+     * RPG STATE & INVENTORY
+     */
+    const STATE_KEY = 'bahasakita9_rpg_v1';
+    
+    let appState = {
+      playerName: "Siswa 9",
+      heroClassIndex: 0,
+      level: 1,
+      hp: 100,
+      maxHp: 100,
+      mp: 50,
+      maxMp: 50,
+      gold: 120,
+      xp: 0,
+      streak: 0,
+      soundEnabled: true,
+      bossHp: 300,
+      bossMaxHp: 300,
+      materiRead: { cerpen: false, diskusi: false, pidato: false, kebahasaan: false },
+      gameDiskusi: { completedCards: [], currentIndex: 0 },
+      gamePidato: { isCompleted: false },
+      gameMajas: { score: 0, isCompleted: false },
+      gameKuis: { score: 0, isCompleted: false, usedFifty: false, usedFreeze: false },
+      trophies: {
+        diskusi_master: false,
+        pidato_master: false,
+        majas_master: false,
+        eyd_master: false,
+        streak_master: false,
+        kutu_buku: false
+      }
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STATE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          appState = { ...appState, ...parsed };
+        }
+      } catch (e) {}
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STATE_KEY, JSON.stringify(appState));
+      } catch (e) {}
+      updateUI();
+      checkTrophies();
+    }
+
+    /**
+     * SYNTHESIZED WEB AUDIO API
+     */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playTone(freq, duration, type = 'sine', delay = 0) {
+      if (!appState.soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      setTimeout(() => {
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          
+          gain.gain.setValueAtTime(0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (e) {}
+      }, delay);
+    }
+
+    function playSound(name) {
+      if (!appState.soundEnabled) return;
+      if (name === 'click') {
+        playTone(520, 0.08, 'sine');
+      } else if (name === 'slash') {
+        playTone(700, 0.05, 'sawtooth', 0);
+        playTone(350, 0.12, 'sawtooth', 40);
+      } else if (name === 'hit') {
+        playTone(180, 0.2, 'square', 0);
+      } else if (name === 'potion') {
+        playTone(440, 0.1, 'sine', 0);
+        playTone(660, 0.15, 'sine', 80);
+      } else if (name === 'levelUp') {
+        playTone(523.25, 0.1, 'triangle', 0);
+        playTone(659.25, 0.1, 'triangle', 100);
+        playTone(783.99, 0.1, 'triangle', 200);
+        playTone(1046.5, 0.4, 'triangle', 300);
+      } else if (name === 'fanfare') {
+        playTone(523.25, 0.1, 'triangle', 0);
+        playTone(659.25, 0.1, 'triangle', 110);
+        playTone(783.99, 0.1, 'triangle', 220);
+        playTone(1046.5, 0.45, 'triangle', 330);
+      }
+    }
+
+    function toggleAudio() {
+      appState.soundEnabled = !appState.soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      if (appState.soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        playSound('click');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+      }
+      lucide.createIcons();
+      saveState();
+    }
+
+    /**
+     * THREE.JS 3D RPG BATTLE ENGINE
+     * Renders both the 3D Hero and the 3D Golem Boss on a battle platform
+     */
+    let renderer, scene, camera;
+    let heroGroup, bossGroup;
+    let heroTargetX = -1.1, heroBaseX = -1.1;
+    let bossTargetX = 1.1, bossBaseX = 1.1;
+    let isAttacking = false, attackProgress = 0;
+
+    const HERO_CLASSES = [
+      { name: "Ksatria Cendekia", color: 0xffffff, pants: 0x1e3a8a, prop: "book" },
+      { name: "Detektif Sastra", color: 0xd97706, pants: 0x334155, prop: "magnifier" },
+      { name: "Pujangga Cyber", color: 0x0284c7, pants: 0x0f172a, prop: "cyber" },
+      { name: "Sang Orator", color: 0x4f46e5, pants: 0x1e1b4b, prop: "mic" }
+    ];
+
+    function init3DRpgScene() {
+      const canvas = document.getElementById('rpgCanvas');
+      if (!canvas) return;
+
+      const container = canvas.parentElement;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true
+      });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+      camera.position.set(0, 0.8, 4.2);
+
+      // Arena Lighting
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffedd5, 1.1);
+      dirLight.position.set(2, 5, 3);
+      scene.add(dirLight);
+
+      const purpleRim = new THREE.PointLight(0xa855f7, 2, 8);
+      purpleRim.position.set(0, 2, -1);
+      scene.add(purpleRim);
+
+      // Arena Floor Disc
+      const floorGeo = new THREE.CylinderGeometry(2.4, 2.5, 0.15, 32);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x1e1b4b,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.position.y = -0.9;
+      scene.add(floor);
+
+      // Arena Rune Ring
+      const ringGeo = new THREE.RingGeometry(1.6, 1.8, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x6366f1,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.4
+      });
+      const runeRing = new THREE.Mesh(ringGeo, ringMat);
+      runeRing.rotation.x = -Math.PI / 2;
+      runeRing.position.y = -0.81;
+      scene.add(runeRing);
+
+      // Groups
+      heroGroup = new THREE.Group();
+      heroGroup.position.set(heroBaseX, -0.15, 0);
+      heroGroup.rotation.y = 0.4;
+      scene.add(heroGroup);
+
+      bossGroup = new THREE.Group();
+      bossGroup.position.set(bossBaseX, -0.1, 0);
+      bossGroup.rotation.y = -0.4;
+      scene.add(bossGroup);
+
+      build3DHero(appState.heroClassIndex);
+      build3DBoss();
+
+      window.addEventListener('resize', () => {
+        if (!renderer || !camera) return;
+        const c = document.getElementById('rpgCanvas');
+        if (!c) return;
+        const cont = c.parentElement;
+        camera.aspect = cont.clientWidth / cont.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(cont.clientWidth, cont.clientHeight);
+      });
+
+      animateRpg();
+    }
+
+    function build3DHero(index) {
+      while (heroGroup.children.length > 0) heroGroup.remove(heroGroup.children[0]);
+
+      const heroConf = HERO_CLASSES[index];
+      const model = new THREE.Group();
+
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.6 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: heroConf.color, roughness: 0.5 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: heroConf.pants, roughness: 0.6 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+
+      // Torso
+      const torsoGeo = new THREE.CylinderGeometry(0.28, 0.25, 0.5, 12);
+      const torso = new THREE.Mesh(torsoGeo, shirtMat);
+      model.add(torso);
+
+      // Legs
+      const legGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.4, 8);
+      const lLeg = new THREE.Mesh(legGeo, pantsMat);
+      lLeg.position.set(-0.12, -0.42, 0);
+      model.add(lLeg);
+      const rLeg = new THREE.Mesh(legGeo, pantsMat);
+      rLeg.position.set(0.12, -0.42, 0);
+      model.add(rLeg);
+
+      // Head
+      const headGeo = new THREE.SphereGeometry(0.26, 16, 16);
+      const head = new THREE.Mesh(headGeo, skinMat);
+      head.position.y = 0.48;
+      model.add(head);
+
+      // Hair
+      const hairGeo = new THREE.SphereGeometry(0.28, 12, 12, 0, Math.PI * 2, 0, Math.PI * 0.5);
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x271c19 });
+      const hair = new THREE.Mesh(hairGeo, hairMat);
+      hair.position.y = 0.52;
+      model.add(hair);
+
+      // Weapon / Prop
+      const swordGeo = new THREE.BoxGeometry(0.08, 0.5, 0.03);
+      const sword = new THREE.Mesh(swordGeo, goldMat);
+      sword.position.set(0.35, 0.1, 0.2);
+      sword.rotation.set(-0.4, 0.2, -0.3);
+      model.add(sword);
+
+      heroGroup.add(model);
+    }
+
+    function build3DBoss() {
+      while (bossGroup.children.length > 0) bossGroup.remove(bossGroup.children[0]);
+
+      const model = new THREE.Group();
+
+      // Golem Rock Texture Material
+      const golemMat = new THREE.MeshStandardMaterial({
+        color: 0x4c1d95,
+        roughness: 0.9,
+        metalness: 0.1
+      });
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const lavaMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.6
+      });
+
+      // Golem Body
+      const bodyGeo = new THREE.DodecahedronGeometry(0.55, 1);
+      const body = new THREE.Mesh(bodyGeo, golemMat);
+      model.add(body);
+
+      // Glowing Core in Chest
+      const coreGeo = new THREE.OctahedronGeometry(0.18);
+      const core = new THREE.Mesh(coreGeo, lavaMat);
+      core.position.set(0, 0.05, 0.4);
+      model.add(core);
+
+      // Head & Horns
+      const bHeadGeo = new THREE.BoxGeometry(0.38, 0.35, 0.35);
+      const bHead = new THREE.Mesh(bHeadGeo, golemMat);
+      bHead.position.set(0, 0.62, 0);
+      model.add(bHead);
+
+      // Glowing Red Eyes
+      const bEyeGeo = new THREE.SphereGeometry(0.05, 8, 8);
+      const bEyeL = new THREE.Mesh(bEyeGeo, eyeMat);
+      bEyeL.position.set(-0.1, 0.65, 0.18);
+      model.add(bEyeL);
+      const bEyeR = new THREE.Mesh(bEyeGeo, eyeMat);
+      bEyeR.position.set(0.1, 0.65, 0.18);
+      model.add(bEyeR);
+
+      // Horns
+      const hornGeo = new THREE.ConeGeometry(0.09, 0.3, 6);
+      const hornL = new THREE.Mesh(hornGeo, lavaMat);
+      hornL.position.set(-0.2, 0.88, 0);
+      hornL.rotation.z = 0.4;
+      model.add(hornL);
+      const hornR = new THREE.Mesh(hornGeo, lavaMat);
+      hornR.position.set(0.2, 0.88, 0);
+      hornR.rotation.z = -0.4;
+      model.add(hornR);
+
+      // Heavy Arms
+      const armGeo = new THREE.BoxGeometry(0.22, 0.6, 0.22);
+      const armL = new THREE.Mesh(armGeo, golemMat);
+      armL.position.set(-0.6, 0.1, 0);
+      model.add(armL);
+      const armR = new THREE.Mesh(armGeo, golemMat);
+      armR.position.set(0.6, 0.1, 0);
+      model.add(armR);
+
+      bossGroup.add(model);
+    }
+
+    const rpgClock = new THREE.Clock();
+
+    function animateRpg() {
+      requestAnimationFrame(animateRpg);
+      const time = rpgClock.getElapsedTime();
+
+      // Idle breathing
+      if (heroGroup && !isAttacking) {
+        heroGroup.position.y = -0.15 + Math.sin(time * 3) * 0.03;
+      }
+      if (bossGroup) {
+        bossGroup.position.y = -0.1 + Math.sin(time * 2 + 1) * 0.04;
+      }
+
+      // Attack Animation Progress
+      if (isAttacking) {
+        attackProgress += 0.08;
+        if (attackProgress <= 0.5) {
+          // Lunge forward
+          heroGroup.position.x = THREE.MathUtils.lerp(heroBaseX, 0.4, attackProgress * 2);
+          heroGroup.rotation.y = 0.8;
+        } else if (attackProgress <= 1.0) {
+          // Return back
+          heroGroup.position.x = THREE.MathUtils.lerp(0.4, heroBaseX, (attackProgress - 0.5) * 2);
+          heroGroup.rotation.y = 0.4;
+        } else {
+          isAttacking = false;
+          attackProgress = 0;
+          heroGroup.position.x = heroBaseX;
+        }
+      }
+
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    /**
+     * BATTLE ACTIONS & DAMAGE LOGIC
+     */
+    function triggerBattleAction(action) {
+      playSound('click');
+      const dialog = document.getElementById('battleDialogueText');
+
+      if (action === 'attack') {
+        // Trigger attack animation
+        isAttacking = true;
+        attackProgress = 0;
+        playSound('slash');
+
+        setTimeout(() => {
+          // Deal damage to boss
+          const dmg = Math.floor(Math.random() * 30) + 45;
+          appState.bossHp = Math.max(0, appState.bossHp - dmg);
+          playSound('hit');
+          showFloatingDamage(`-${dmg} DMG! 💥`, 'rose');
+
+          // Boss flinch shake
+          if (bossGroup) {
+            bossGroup.position.x = bossBaseX + 0.2;
+            setTimeout(() => { bossGroup.position.x = bossBaseX; }, 200);
+          }
+
+          dialog.innerText = `Kamu melancarkan serangan Pedang Pena Emas! Menyebabkan ${dmg} damage pada Raja Typo!`;
+          updateBattleHpUI();
+
+          if (appState.bossHp <= 0) {
+            handleBossDefeated();
+          } else {
+            // Boss counter attack after delay
+            setTimeout(bossCounterAttack, 1200);
+          }
+        }, 300);
+
+      } else if (action === 'defend') {
+        scrollToSection('game-diskusi');
+        dialog.innerText = "Gunakan quest sortir teks diskusi untuk membentuk Perisai Logika Pro & Kontra!";
+
+      } else if (action === 'spell') {
+        if (appState.mp >= 15) {
+          appState.mp -= 15;
+          playSound('levelUp');
+          showFloatingDamage("MANTRA AKTIF! ✨", 'sky');
+          scrollToSection('game-majas');
+          dialog.innerText = "Mantra Gaya Bahasa diaktifkan! Selesaikan tebakan majas untuk kombo damage ganda!";
+        } else {
+          playSound('error');
+          dialog.innerText = "Mana tidak cukup! Kumpulkan MP dengan membaca materi atau menjawab benar!";
+        }
+        updateUI();
+
+      } else if (action === 'item') {
+        if (appState.gold >= 30 && appState.hp < appState.maxHp) {
+          appState.gold -= 30;
+          appState.hp = Math.min(appState.maxHp, appState.hp + 35);
+          playSound('potion');
+          showFloatingDamage("+35 HP! 💚", 'emerald');
+          dialog.innerText = "Kamu meminum Ramuan Literasi! HP bertambah +35!";
+          updateUI();
+          updateBattleHpUI();
+        } else if (appState.hp >= appState.maxHp) {
+          dialog.innerText = "HP kamu sudah penuh!";
+        } else {
+          dialog.innerText = "Gold tidak cukup! Kumpulkan gold dengan menyelesaikan quest!";
+        }
+      }
+    }
+
+    function bossCounterAttack() {
+      if (appState.bossHp <= 0) return;
+      const bDmg = Math.floor(Math.random() * 15) + 10;
+      appState.hp = Math.max(10, appState.hp - bDmg);
+      playSound('hit');
+
+      // Screen shake
+      document.body.classList.add('shake-screen');
+      setTimeout(() => { document.body.classList.remove('shake-screen'); }, 350);
+
+      showFloatingDamage(`-${bDmg} HP! ⚔️`, 'rose');
+      document.getElementById('battleDialogueText').innerText = `Raja Typo membalas dengan hantaman 'Kalimat Rancu'! Kamu kehilangan ${bDmg} HP!`;
+      updateBattleHpUI();
+      updateUI();
+    }
+
+    function handleBossDefeated() {
+      playSound('fanfare');
+      addXp(150, 'Mengalahkan Raja Typo');
+      appState.gold += 100;
+      appState.trophies.eyd_master = true;
+
+      document.getElementById('battleDialogueText').innerText = "SELAMAT! Raja Typo berhasil dikalahkan! Kerajaan Literasi Bahasa Indonesia telah diselamatkan!";
+      
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function updateBattleHpUI() {
+      document.getElementById('battleHeroHpText').innerText = appState.hp;
+      document.getElementById('battleBossHpText').innerText = appState.bossHp;
+      document.getElementById('overheadBossHp').innerText = `${appState.bossHp}/${appState.bossMaxHp}`;
+      
+      const pct = (appState.bossHp / appState.bossMaxHp) * 100;
+      document.getElementById('overheadBossHpBar').style.width = `${pct}%`;
+    }
+
+    function showFloatingDamage(text, color = 'amber') {
+      const container = document.getElementById('floatingDamageContainer');
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2 rounded-2xl bg-slate-900 border border-${color}-500 text-${color}-400 font-black font-mono text-base shadow-2xl animate-damage`;
+      toast.innerText = text;
+      container.appendChild(toast);
+      setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 1000);
+    }
+
+    /**
+     * STATS & UI SYNC
+     */
+    function updateUI() {
+      document.getElementById('hudHeroLevel').innerText = appState.level;
+      document.getElementById('hudHpText').innerText = appState.hp;
+      document.getElementById('hudMpText').innerText = appState.mp;
+      document.getElementById('hudGoldText').innerText = appState.gold;
+
+      const hpPct = (appState.hp / appState.maxHp) * 100;
+      document.getElementById('hudHpBar').style.width = `${hpPct}%`;
+
+      const mpPct = (appState.mp / appState.maxMp) * 100;
+      document.getElementById('hudMpBar').style.width = `${mpPct}%`;
+
+      document.getElementById('navPlayerName').innerText = appState.playerName;
+      document.getElementById('hudHeroClassName').innerText = HERO_CLASSES[appState.heroClassIndex].name;
+      document.getElementById('arenaHeroName').innerText = `${appState.playerName} (${HERO_CLASSES[appState.heroClassIndex].name})`;
+
+      updateBattleHpUI();
+      renderTrophyGrid();
+    }
+
+    function addXp(amount, reason = '') {
+      appState.xp += amount;
+      appState.gold += Math.round(amount * 0.5);
+
+      // Level up check
+      const nextLevelXp = appState.level * 100;
+      if (appState.xp >= nextLevelXp) {
+        appState.level++;
+        appState.maxHp += 20;
+        appState.hp = appState.maxHp;
+        appState.maxMp += 10;
+        appState.mp = appState.maxMp;
+        playSound('levelUp');
+        showFloatingDamage(`LEVEL UP! Lv.${appState.level} 👑`, 'amber');
+      }
+
+      saveState();
+    }
+
+    function select3DCharacter(index) {
+      playSound('click');
+      appState.heroClassIndex = index;
+      build3DHero(index);
+
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`modalCharBtn-${i}`);
+        if (btn) {
+          if (i === index) {
+            btn.className = "p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-left transition-all shadow-sm";
+          } else {
+            btn.className = "p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-left transition-all";
+          }
+        }
+      }
+      saveState();
+    }
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /**
+     * TROPHY SYSTEM
+     */
+    const TROPHY_LIST = [
+      { id: 'diskusi_master', name: 'Perisai Argumen', desc: 'Menyelesaikan quest gerbang teks diskusi', icon: 'shield' },
+      { id: 'pidato_master', name: 'Arsitek Pidato', desc: 'Merangkai 5 naskah mantra pidato persuasif', icon: 'scroll' },
+      { id: 'majas_master', name: 'Penyihir Majas', desc: 'Menjawab benar seluruh tantangan tebak majas', icon: 'sparkles' },
+      { id: 'eyd_master', name: 'Pembasmi Typo', desc: 'Mengalahkan Raja Typo di arena battle 3D', icon: 'sword' },
+      { id: 'streak_master', name: 'Api Kombo', desc: 'Mencapai rantai kombo streak beruntun', icon: 'flame' },
+      { id: 'kutu_buku', name: 'Cendekia Sejati', desc: 'Menyerap 4 kitab rangkuman materi pokok', icon: 'book' }
+    ];
+
+    function checkTrophies() {
+      if (Object.values(appState.materiRead).every(Boolean)) {
+        appState.trophies.kutu_buku = true;
+      }
+      renderTrophyGrid();
+    }
+
+    function renderTrophyGrid() {
+      const container = document.getElementById('trophyGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let count = 0;
+      TROPHY_LIST.forEach(t => {
+        const isUnlocked = appState.trophies[t.id];
+        if (isUnlocked) count++;
+
+        const item = document.createElement('div');
+        item.className = `p-3 rounded-2xl border transition-all text-center flex flex-col items-center justify-between gap-1.5 ${
+          isUnlocked 
+            ? 'bg-amber-950/40 border-amber-500/60 text-amber-200' 
+            : 'bg-slate-950 border-slate-800 text-slate-500 opacity-60'
+        }`;
+
+        item.innerHTML = `
+          <div class="w-8 h-8 rounded-xl ${isUnlocked ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'} flex items-center justify-center font-bold">
+            <i data-lucide="${t.icon}" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="font-extrabold text-[11px] leading-tight text-white">${t.name}</div>
+            <div class="text-[9px] mt-0.5 leading-tight text-slate-400">${t.desc}</div>
+          </div>
+          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${isUnlocked ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}">
+            ${isUnlocked ? '✓ Terbuka' : 'Terkunci'}
+          </span>
+        `;
+        container.appendChild(item);
+      });
+
+      document.getElementById('trophyUnlockCount').innerText = `${count} / ${TROPHY_LIST.length} Terbuka`;
+      lucide.createIcons();
+    }
+
+    /**
+     * PROFIL MODAL
+     */
+    function openProfileModal() {
+      playSound('click');
+      document.getElementById('playerNameInput').value = appState.playerName;
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+    function saveProfile() {
+      const val = document.getElementById('playerNameInput').value.trim();
+      if (val) appState.playerName = val;
+      playSound('levelUp');
+      closeProfileModal();
+      saveState();
+    }
+
+    /**
+     * RESULT / TAS MODAL
+     */
+    function openResultModal() {
+      playSound('click');
+      document.getElementById('modalTotalXp').innerText = appState.xp;
+      document.getElementById('modalRankText').innerText = `${HERO_CLASSES[appState.heroClassIndex].name} Lv.${appState.level}`;
+      document.getElementById('resultModal').classList.remove('hidden');
+      renderTrophyGrid();
+    }
+    function closeResultModal() {
+      document.getElementById('resultModal').classList.add('hidden');
+    }
+    function shareAchievement() {
+      const text = `⚔️ Rapor RPG BahasaKita 9 (Kelas 9 SMP):\n` +
+                   `Ksatria: ${appState.playerName} (${HERO_CLASSES[appState.heroClassIndex].name} Lv.${appState.level})\n` +
+                   `Total EXP: ${appState.xp} EXP | Gold: ${appState.gold}\n` +
+                   `Status Boss: ${appState.bossHp <= 0 ? 'Terkalahkan 👑' : 'Sedang Bertarung'}\n` +
+                   `Ayo mainkan RPG pembelajaran Bahasa Indonesia bareng BahasaKita 9!`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          playSound('potion');
+          const btn = document.getElementById('shareBtnText');
+          btn.innerText = "✓ Rapor Berhasil Disalin!";
+          setTimeout(() => { btn.innerText = "Salin Rapor Petualangan"; }, 2000);
+        });
+      } else alert(text);
+    }
+    function resetAllProgress() {
+      if (confirm("Reset seluruh data petualangan RPG Anda?")) {
+        appState.level = 1;
+        appState.hp = 100;
+        appState.mp = 50;
+        appState.xp = 0;
+        appState.gold = 120;
+        appState.bossHp = 300;
+        saveState();
+        closeResultModal();
+      }
+    }
+
+    /**
+     * ZONA MATERI TABS
+     */
+    function switchMateriTab(tabName) {
+      playSound('click');
+      const tabs = ['cerpen', 'diskusi', 'pidato', 'kebahasaan'];
+      tabs.forEach(t => {
+        const pane = document.getElementById(`materiContent-${t}`);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tabName) {
+          pane.classList.remove('hidden');
+          btn.className = "tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-sky-600 text-white shadow-md flex items-center justify-center gap-2";
+        } else {
+          pane.classList.add('hidden');
+          btn.className = "tab-materi-btn flex-1 min-w-[130px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2";
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function markMateriRead(key) {
+      if (!appState.materiRead[key]) {
+        appState.materiRead[key] = true;
+        addXp(15, 'Membaca Kitab ' + key);
+        playSound('potion');
+      } else playSound('click');
+      saveState();
+    }
+
+    /**
+     * ==========================================
+     * QUEST 1: SORTIR ARGUMEN (TEKS DISKUSI)
+     * ==========================================
+     */
+    const ARGUMEN_DATA = [
+      { id: 1, text: "Ponsel memudahkan siswa mengakses kamus KBBI daring dan ribuan jurnal sains terkini secara cepat saat pelajaran.", type: "pro", explanation: "Menyoroti manfaat efisiensi sumber belajar digital." },
+      { id: 2, text: "Notifikasi media sosial dan game online saat guru menerangkan dapat memecah fokus belajar di kelas.", type: "kontra", explanation: "Menggarisbawahi potensi distraksi belajar." },
+      { id: 3, text: "Memudahkan komunikasi darurat antara siswa dengan orang tua saat jam pulang atau kegiatan ekskul.", type: "pro", explanation: "Aspek keselamatan komunikasi adalah argumen pro." },
+      { id: 4, text: "Berisiko memperlebar kesenjangan sosial antar siswa yang memiliki gawai mewah dengan yang sederhana.", type: "kontra", explanation: "Isu kesenjangan sosial adalah argumen kontra." },
+      { id: 5, text: "Melatih kecakapan literasi digital siswa dalam memilah informasi valid di internet.", type: "pro", explanation: "Pemberdayaan literasi masa depan adalah argumen pro." },
+      { id: 6, text: "Paparan layar berlebih memicu kelelahan mata serta mengurangi interaksi fisik saat istirahat.", type: "kontra", explanation: "Dampak kesehatan fisik adalah argumen kontra." }
+    ];
+
+    let currentCardIndex = 0;
+    let sortedCards = [];
+
+    function renderCurrentDiskusiCard() {
+      const container = document.getElementById('activeCardContainer');
+      const counter = document.getElementById('diskusiCardCount');
+      
+      if (currentCardIndex >= ARGUMEN_DATA.length) {
+        container.innerHTML = `
+          <div class="rounded-3xl p-6 text-center bg-slate-900 border border-teal-500/50 space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-teal-950 text-teal-400 border border-teal-800 flex items-center justify-center mx-auto">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <h4 class="font-extrabold text-white text-base">Gerbang Logika Terbuka!</h4>
+            <p class="text-xs text-slate-400">Seluruh 6 segel argumen pro dan kontra berhasil dipilah!</p>
+            <button onclick="resetGameDiskusi()" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs">Mainkan Lagi</button>
+          </div>
+        `;
+        counter.innerText = 'Selesai (6 / 6)';
+        appState.trophies.diskusi_master = true;
+        saveState();
+        lucide.createIcons();
+        return;
+      }
+
+      const card = ARGUMEN_DATA[currentCardIndex];
+      counter.innerText = `${currentCardIndex + 1} / ${ARGUMEN_DATA.length}`;
+
+      container.innerHTML = `
+        <div id="dragCard" draggable="true" ondragstart="handleDragStart(event)" class="rounded-3xl p-5 bg-slate-900 border-2 border-slate-700 hover:border-teal-400 transition-all shadow-md select-none">
+          <div class="flex items-center justify-between mb-2 text-xs text-slate-400">
+            <span class="font-bold text-teal-400 flex items-center gap-1.5"><i data-lucide="scroll" class="w-4 h-4"></i> Segel #${card.id}</span>
+            <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded font-mono">Bisa di-Drag</span>
+          </div>
+          <p class="text-white font-semibold text-sm leading-relaxed mb-3">"${card.text}"</p>
+          <div class="text-[11px] text-slate-400 flex items-center justify-between pt-2 border-t border-slate-800">
+            <span>Tentukan: Pro atau Kontra?</span>
+            <span class="font-mono text-teal-400 font-bold">+20 EXP</span>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function handleDragStart(e) { e.dataTransfer.setData('text/plain', ARGUMEN_DATA[currentCardIndex].type); playSound('click'); }
+    function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('border-teal-400'); }
+    function handleDragLeave(e) { e.currentTarget.classList.remove('border-teal-400'); }
+    function handleDrop(e, type) { e.preventDefault(); e.currentTarget.classList.remove('border-teal-400'); processSort(type); }
+    function handleManualSort(choice) { processSort(choice); }
+
+    function processSort(choice) {
+      if (currentCardIndex >= ARGUMEN_DATA.length) return;
+      const card = ARGUMEN_DATA[currentCardIndex];
+      const feedbackBox = document.getElementById('diskusiFeedbackBox');
+      const feedbackIcon = document.getElementById('diskusiFeedbackIcon');
+      const feedbackTitle = document.getElementById('diskusiFeedbackTitle');
+      const feedbackDesc = document.getElementById('diskusiFeedbackDesc');
+
+      feedbackBox.classList.remove('hidden');
+
+      if (choice === card.type) {
+        addXp(20, 'Sortir Benar');
+        playSound('slash');
+        showFloatingDamage("+20 EXP! ✨", 'teal');
+
+        feedbackBox.className = "w-full p-4 rounded-2xl bg-teal-950/60 border border-teal-800 text-xs";
+        feedbackIcon.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-teal-400"></i>`;
+        feedbackTitle.className = "font-bold text-teal-300";
+        feedbackTitle.innerText = `Segel Terbuka! (${card.type.toUpperCase()})`;
+        feedbackDesc.innerText = card.explanation;
+
+        const targetContainer = document.getElementById(card.type === 'pro' ? 'proContainer' : 'kontraContainer');
+        const badgeCount = document.getElementById(card.type === 'pro' ? 'badgeCountPro' : 'badgeCountKontra');
+        
+        const cardElem = document.createElement('div');
+        cardElem.className = "p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs leading-relaxed text-slate-300";
+        cardElem.innerText = card.text;
+        targetContainer.appendChild(cardElem);
+
+        sortedCards.push(card);
+        badgeCount.innerText = `${targetContainer.children.length} Kartu`;
+        currentCardIndex++;
+        renderCurrentDiskusiCard();
+
+      } else {
+        playSound('hit');
+        showFloatingDamage("-10 HP!", 'rose');
+        appState.hp = Math.max(10, appState.hp - 10);
+        updateUI();
+
+        feedbackBox.className = "w-full p-4 rounded-2xl bg-rose-950/60 border border-rose-800 text-xs";
+        feedbackIcon.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>`;
+        feedbackTitle.className = "font-bold text-rose-300";
+        feedbackTitle.innerText = "Segel Salah!";
+        feedbackDesc.innerText = `Ini termasuk kategori ${card.type.toUpperCase()}. ${card.explanation}`;
+      }
+      lucide.createIcons();
+    }
+
+    function resetGameDiskusi() {
+      currentCardIndex = 0;
+      sortedCards = [];
+      document.getElementById('proContainer').innerHTML = '';
+      document.getElementById('kontraContainer').innerHTML = '';
+      document.getElementById('badgeCountPro').innerText = '0 Kartu';
+      document.getElementById('badgeCountKontra').innerText = '0 Kartu';
+      document.getElementById('diskusiFeedbackBox').classList.add('hidden');
+      renderCurrentDiskusiCard();
+      playSound('click');
+    }
+
+    /**
+     * ==========================================
+     * QUEST 2: DETEKTIF STRUKTUR PIDATO
+     * ==========================================
+     */
+    const PIDATO_PARAGRAPHS = [
+      { id: 1, correctIndex: 0, structure: "1. Salam Pembuka & Sapaan", text: "Selamat pagi Bapak dan Ibu guru yang kami hormati, serta rekan-rekan siswa kelas 9 yang saya banggakan. Puji syukur kita panjatkan ke hadirat Tuhan Yang Maha Kuasa atas kesehatan dan kesempatan berkumpul hari ini." },
+      { id: 2, correctIndex: 1, structure: "2. Pengenalan Isu Sampah", text: "Bapak, Ibu, dan teman-teman sekalian, setiap hari tempat sampah di sekolah kita meluap oleh ratusan botol dan kantong plastik sekali pakai sisa jam istirahat. Jika dibiarkan, lingkungan sekolah kita yang asri akan terkepung tumpukan limbah." },
+      { id: 3, correctIndex: 2, structure: "3. Rangkaian Argumen & Fakta", text: "Sebagaimana kita ketahui, plastik membutuhkan waktu hingga ratusan tahun untuk terurai di alam. Sampah plastik yang menyumbat saluran air memicu sarang nyamuk, genangan banjir saat hujan, dan zat mikroplastiknya membahayakan kesehatan makhluk hidup." },
+      { id: 4, correctIndex: 3, structure: "4. Ajakan Bertindak Nyata", text: "Oleh sebab itu, marilah mulai hari ini kita biasakan membawa botol minum (tumbler) dan kotak bekal sendiri dari rumah, serta aktif memilah sampah daur ulang di tempat yang telah disediakan demi sekolah kita tercinta!" },
+      { id: 5, correctIndex: 4, structure: "5. Penutup Pidato", text: "Demikianlah pesan yang dapat saya sampaikan. Semoga langkah kecil kita hari ini menjadi kebiasaan mulia demi bumi yang lestari. Terima kasih atas perhatian teman-teman sekalian, selamat pagi." }
+    ];
+
+    let currentPidatoList = [];
+
+    function initPidatoGame() {
+      currentPidatoList = [...PIDATO_PARAGRAPHS].sort(() => Math.random() - 0.5);
+      renderPidatoList();
+    }
+
+    function renderPidatoList() {
+      const container = document.getElementById('pidatoListContainer');
+      container.innerHTML = '';
+
+      currentPidatoList.forEach((item, index) => {
+        const itemElem = document.createElement('div');
+        itemElem.className = "rounded-2xl p-4 bg-slate-900 border border-slate-800 flex items-center justify-between gap-3";
+        itemElem.id = `pidatoCard-${item.id}`;
+
+        itemElem.innerHTML = `
+          <div class="flex items-start gap-3 flex-1">
+            <div class="w-7 h-7 rounded-lg bg-slate-800 text-amber-400 font-bold font-mono text-xs flex items-center justify-center shrink-0 mt-0.5" id="pidatoSlotBadge-${item.id}">
+              #${index + 1}
+            </div>
+            <div class="space-y-1">
+              <div id="pidatoStructureTag-${item.id}" class="text-[11px] font-bold text-slate-400">Posisi ke-${index + 1}</div>
+              <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">"${item.text}"</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="movePidatoItem(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-300">
+              <i data-lucide="chevron-up" class="w-4 h-4"></i>
+            </button>
+            <button onclick="movePidatoItem(${index}, 1)" ${index === currentPidatoList.length - 1 ? 'disabled' : ''} class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-300">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(itemElem);
+      });
+      lucide.createIcons();
+    }
+
+    function movePidatoItem(index, dir) {
+      const newIdx = index + dir;
+      if (newIdx < 0 || newIdx >= currentPidatoList.length) return;
+      const tmp = currentPidatoList[index];
+      currentPidatoList[index] = currentPidatoList[newIdx];
+      currentPidatoList[newIdx] = tmp;
+      playSound('click');
+      renderPidatoList();
+      document.getElementById('pidatoResultBanner').classList.add('hidden');
+    }
+
+    function checkPidatoOrder() {
+      let correct = 0;
+      currentPidatoList.forEach((item, idx) => {
+        const card = document.getElementById(`pidatoCard-${item.id}`);
+        const tag = document.getElementById(`pidatoStructureTag-${item.id}`);
+        if (item.correctIndex === idx) {
+          correct++;
+          card.className = "rounded-2xl p-4 bg-emerald-950/40 border border-emerald-600 flex items-center justify-between gap-3";
+          tag.className = "text-[11px] font-bold text-emerald-400";
+          tag.innerText = `✓ Benar: ${item.structure}`;
+        } else {
+          card.className = "rounded-2xl p-4 bg-rose-950/30 border border-rose-800 flex items-center justify-between gap-3";
+          tag.className = "text-[11px] font-bold text-rose-400";
+          tag.innerText = "Posisi belum tepat";
+        }
+      });
+
+      const banner = document.getElementById('pidatoResultBanner');
+      banner.classList.remove('hidden');
+
+      if (correct === 5) {
+        playSound('fanfare');
+        addXp(100, 'Pidato Terangkai');
+        appState.trophies.pidato_master = true;
+        banner.className = "mt-6 p-5 rounded-2xl bg-emerald-950/70 border border-emerald-600 text-white flex flex-col sm:flex-row items-center justify-between gap-4";
+        banner.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <i data-lucide="scroll" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-sm">Mantra Pidato Terangkai Sempurna!</h4>
+              <p class="text-xs text-emerald-300">Dengarkan simfoni orasi suara naskahmu!</p>
+            </div>
+          </div>
+          <button onclick="speakFullSpeech()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2">
+            <i data-lucide="volume-2" class="w-4 h-4"></i>
+            <span>Dengarkan Orasi Pidato</span>
+          </button>
+        `;
+      } else {
+        playSound('hit');
+        banner.className = "mt-6 p-4 rounded-2xl bg-amber-950/60 border border-amber-700 text-amber-200 text-xs";
+        banner.innerText = `Baru ${correct} dari 5 paragraf yang pas. Awali dengan salam, uraikan isu, sajikan argumen, ajakan, lalu penutup!`;
+      }
+      lucide.createIcons();
+    }
+
+    function speakFullSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const text = PIDATO_PARAGRAPHS.map(p => p.text).join(' ... ');
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'id-ID';
+        utter.rate = 0.95;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function resetGamePidato() {
+      initPidatoGame();
+      document.getElementById('pidatoResultBanner').classList.add('hidden');
+      playSound('click');
+    }
+
+    /**
+     * ==========================================
+     * QUEST 3: ARENA MAJAS CEPAT
+     * ==========================================
+     */
+    const MAJAS_DATA = [
+      { quote: "Bulan tersenyum ramah menyapa malam yang sunyi sepi.", answer: "personifikasi", explanation: "Bulan digambarkan bersikap ramah seperti manusia (Personifikasi)." },
+      { quote: "Raja siang mulai menampakkan dirinya di ufuk timur.", answer: "metafora", explanation: "'Raja siang' kiasan langsung untuk matahari (Metafora)." },
+      { quote: "Suaranya menggelegar hingga mampu membelah angkasa raya.", answer: "hiperbola", explanation: "Pernyataan yang dilebih-lebihkan (Hiperbola)." },
+      { quote: "Wajah gadis itu berseri-seri laksana rembulan purnama.", answer: "simile", explanation: "Menggunakan kata perumpamaan 'laksana' (Simile)." }
+    ];
+    let majasCurrentIndex = 0, majasScore = 0, majasAnswered = false;
+
+    function renderMajasQuestion() {
+      majasAnswered = false;
+      const q = MAJAS_DATA[majasCurrentIndex];
+      document.getElementById('majasCardIndex').innerText = `${majasCurrentIndex + 1}`;
+      document.getElementById('majasQuoteText').innerText = `"${q.quote}"`;
+      document.getElementById('majasFeedbackBox').classList.add('hidden');
+      document.getElementById('majasNextBtn').classList.add('hidden');
+
+      const btns = document.querySelectorAll('#majasButtonGroup button');
+      btns.forEach(b => {
+        b.disabled = false;
+        b.className = "p-3.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-purple-900/50 hover:border-purple-500 text-white font-bold text-xs sm:text-sm transition-all flex flex-col items-center gap-1";
+      });
+    }
+
+    function handleMajasAnswer(ans) {
+      if (majasAnswered) return;
+      majasAnswered = true;
+      const q = MAJAS_DATA[majasCurrentIndex];
+      const fb = document.getElementById('majasFeedbackBox');
+      fb.classList.remove('hidden');
+
+      if (ans === q.answer) {
+        majasScore++;
+        addXp(25, 'Majas Benar');
+        playSound('slash');
+        document.getElementById('majasScoreDisplay').innerText = `${majasScore} Benar`;
+        fb.className = "p-4 rounded-2xl bg-emerald-950/60 border border-emerald-700 text-emerald-300 text-xs";
+        fb.innerHTML = `<strong>Tepat! (${q.answer.toUpperCase()})</strong> - ${q.explanation}`;
+      } else {
+        playSound('hit');
+        showFloatingDamage("-10 HP!", 'rose');
+        appState.hp = Math.max(10, appState.hp - 10);
+        updateUI();
+        fb.className = "p-4 rounded-2xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs";
+        fb.innerHTML = `<strong>Salah! Jawabannya: ${q.answer.toUpperCase()}</strong> - ${q.explanation}`;
+      }
+      document.getElementById('majasNextBtn').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function nextMajasQuestion() {
+      playSound('click');
+      majasCurrentIndex++;
+      if (majasCurrentIndex < MAJAS_DATA.length) {
+        renderMajasQuestion();
+      } else {
+        appState.trophies.majas_master = true;
+        saveState();
+        document.getElementById('majasCardStage').innerHTML = `
+          <h4 class="font-black text-white text-base">Hutan Majas Berhasil Dilewati!</h4>
+          <p class="text-xs text-slate-400 mt-1">Skor: ${majasScore} dari ${MAJAS_DATA.length} berhasil dijawab!</p>
+        `;
+        document.getElementById('majasButtonGroup').classList.add('hidden');
+        document.getElementById('majasNextBtn').classList.add('hidden');
+      }
+    }
+
+    /**
+     * ==========================================
+     * QUEST 4: KUIS KILAT EYD V
+     * ==========================================
+     */
+    const QUIZ_QUESTIONS = [
+      { category: "Kata Baku", question: "Pasangan kata baku sesuai KBBI adalah...", options: [
+        { text: "A. Praktik dan Izin", isCorrect: true },
+        { text: "B. Praktek dan Ijin", isCorrect: false },
+        { text: "C. Aktifitas dan Kwalitas", isCorrect: false },
+        { text: "D. Merubah dan Obyek", isCorrect: false }
+      ], explanation: "Bentuk baku adalah 'praktik', 'izin', 'aktivitas', dan 'mengubah'." },
+      { category: "Konjungsi", question: "Konjungsi antarkalimat pertentangan yang tepat adalah...", options: [
+        { text: "A. Sehingga", isCorrect: false },
+        { text: "B. Meskipun demikian", isCorrect: true },
+        { text: "C. Oleh karena itu", isCorrect: false },
+        { text: "D. Padahal", isCorrect: false }
+      ], explanation: "'Meskipun demikian' menyatakan hubungan pertentangan antarkalimat dan diikuti koma." },
+      { category: "EYD V", question: "Penulisan judul cerpen yang tepat adalah...", options: [
+        { text: "A. Menatap Senja di Pantai Kuta", isCorrect: true },
+        { text: "B. Menatap Senja Di Pantai Kuta", isCorrect: false },
+        { text: "C. menatap senja di pantai kuta", isCorrect: false },
+        { text: "D. Menatap Senja di-Pantai Kuta", isCorrect: false }
+      ], explanation: "Kata tugas 'di' ditulis huruf kecil bila tidak di awal judul." },
+      { category: "Persuasi", question: "Ciri kalimat ajakan dalam pidato persuasif adalah...", options: [
+        { text: "A. Sekolah kami memiliki aula luas.", isCorrect: false },
+        { text: "B. Marilah kita jaga kebersihan lingkungan!", isCorrect: true },
+        { text: "C. Di suatu senja, Arga termenung.", isCorrect: false },
+        { text: "D. Ponsel cerdas memiliki dua sisi.", isCorrect: false }
+      ], explanation: "Kata 'marilah', 'ayo' merupakan kata ajakan persuasif." }
+    ];
+
+    let quizIdx = 0, quizScore = 0, quizTimer = null, quizTimeLeft = 15, quizDone = false;
+
+    function startQuizQuestion() {
+      quizDone = false;
+      quizTimeLeft = 15;
+      const q = QUIZ_QUESTIONS[quizIdx];
+      document.getElementById('quizQuestionNumber').innerText = `Soal ${quizIdx + 1} dari ${QUIZ_QUESTIONS.length}`;
+      document.getElementById('quizCategoryLabel').innerText = q.category;
+      document.getElementById('quizQuestionText').innerText = q.question;
+
+      const grid = document.getElementById('quizOptionsGrid');
+      grid.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `qOpt-${idx}`;
+        btn.className = "p-3.5 rounded-2xl border border-slate-800 bg-slate-950 hover:bg-slate-800 text-left font-bold text-xs sm:text-sm text-white transition-all";
+        btn.innerText = opt.text;
+        btn.onclick = () => selectQuizOption(idx);
+        grid.appendChild(btn);
+      });
+
+      document.getElementById('quizFeedbackBox').classList.add('hidden');
+      document.getElementById('quizNextBtn').classList.add('hidden');
+
+      clearInterval(quizTimer);
+      updateQuizBar();
+      quizTimer = setInterval(() => {
+        quizTimeLeft--;
+        updateQuizBar();
+        if (quizTimeLeft <= 0) {
+          clearInterval(quizTimer);
+          selectQuizOption(-1);
+        }
+      }, 1000);
+    }
+
+    function updateQuizBar() {
+      document.getElementById('quizTimerText').innerText = `${quizTimeLeft}s`;
+      document.getElementById('quizTimerBar').style.width = `${(quizTimeLeft / 15) * 100}%`;
+    }
+
+    function useFiftyFifty() {
+      if (appState.gameKuis.usedFifty || quizDone) return;
+      appState.gameKuis.usedFifty = true;
+      playSound('click');
+      document.getElementById('powerupFifty').classList.add('opacity-30');
+      const q = QUIZ_QUESTIONS[quizIdx];
+      let eliminated = 0;
+      q.options.forEach((opt, idx) => {
+        if (!opt.isCorrect && eliminated < 2) {
+          const b = document.getElementById(`qOpt-${idx}`);
+          if (b) { b.classList.add('opacity-25', 'line-through'); b.disabled = true; eliminated++; }
+        }
+      });
+    }
+
+    function useFreezeTime() {
+      if (appState.gameKuis.usedFreeze || quizDone) return;
+      appState.gameKuis.usedFreeze = true;
+      playSound('click');
+      document.getElementById('powerupFreeze').classList.add('opacity-30');
+      quizTimeLeft = Math.min(15, quizTimeLeft + 10);
+      updateQuizBar();
+    }
+
+    function selectQuizOption(idx) {
+      if (quizDone) return;
+      quizDone = true;
+      clearInterval(quizTimer);
+      const q = QUIZ_QUESTIONS[quizIdx];
+      const fb = document.getElementById('quizFeedbackBox');
+      fb.classList.remove('hidden');
+
+      if (idx >= 0 && q.options[idx].isCorrect) {
+        quizScore++;
+        addXp(30, 'Kuis Benar');
+        playSound('slash');
+        fb.className = "p-4 rounded-2xl bg-emerald-950/60 border border-emerald-700 text-emerald-300 text-xs";
+        fb.innerHTML = `<strong>Tepat! (+30 EXP)</strong> - ${q.explanation}`;
+      } else {
+        playSound('hit');
+        showFloatingDamage("-15 HP!", 'rose');
+        appState.hp = Math.max(10, appState.hp - 15);
+        updateUI();
+        fb.className = "p-4 rounded-2xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs";
+        fb.innerHTML = `<strong>Salah!</strong> - ${q.explanation}`;
+      }
+      document.getElementById('quizNextBtn').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function nextQuizQuestion() {
+      playSound('click');
+      quizIdx++;
+      if (quizIdx < QUIZ_QUESTIONS.length) startQuizQuestion();
+      else {
+        document.getElementById('quizPlayArea').classList.add('hidden');
+        document.getElementById('quizFinishedArea').classList.remove('hidden');
+        document.getElementById('quizFinalScore').innerText = `${quizScore} / ${QUIZ_QUESTIONS.length}`;
+      }
+    }
+
+    function restartQuiz() {
+      quizIdx = 0;
+      quizScore = 0;
+      document.getElementById('quizPlayArea').classList.remove('hidden');
+      document.getElementById('quizFinishedArea').classList.add('hidden');
+      startQuizQuestion();
+    }
+
+    /**
+     * INITIALIZATION
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      init3DRpgScene();
+      updateUI();
+      renderCurrentDiskusiCard();
+      initPidatoGame();
+      renderMajasQuestion();
+      startQuizQuestion();
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
